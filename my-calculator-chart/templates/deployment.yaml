@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-calculator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: my-calculator
+  template:
+    metadata:
+      labels:
+        app: my-calculator
+    spec:
+      containers:
+      - name: calculator
+        image: genciano/projectdevops:latest
+        ports:
+        - containerPort: 5000
