@@ -16,7 +16,7 @@ pipeline {
                     $class: 'GitSCM',
                     branches: [[name: '*/master']],
                     userRemoteConfigs: [[
-                        url: 'git@github.com:Genciano/project-devops.git',
+                        url: 'git@github.com:Genciano/my-calculator-pipe.git',
                         credentialsId: GIT_CREDENTIALS
                     ]]
                 ])
