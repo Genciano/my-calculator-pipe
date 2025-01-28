@@ -2,66 +2,63 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_REGISTRY = 'seu-usuario-dockerhub' // Substitua pelo seu usuário Docker Hub
-        IMAGE_NAME = 'minha-aplicacao'           // Nome da imagem no Docker Hub
-        KUBE_CONFIG_PATH = '/root/.kube/config' // Caminho do kubeconfig dentro do container Jenkins
+        DOCKER_CREDENTIALS = 'docker-login' // ID das credenciais Docker
+        GIT_CREDENTIALS = 'git-credentials' // ID das credenciais GitHub
+        KUBE_CONFIG = 'kubeconfig-minikube' // ID das credenciais Kubernetes
+        DOCKER_IMAGE = 'genciano-dockerhub/my-calculator-pipe'
+        K8S_NAMESPACE = 'default' // Substitua se necessário
     }
 
     stages {
-        stage('Checkout') {
+        stage('Clonar Repositório') {
             steps {
-                checkout scm
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: '*/master']],
+                    userRemoteConfigs: [[
+                        url: 'git@github.com:Genciano/project-devops.git',
+                        credentialsId: GIT_CREDENTIALS
+                    ]]
+                ])
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Build da Imagem Docker') {
             steps {
                 script {
-                    sh "docker build -t ${DOCKER_REGISTRY}/${IMAGE_NAME}:latest ."
+                    sh '''
+                    docker build -t $DOCKER_IMAGE:latest .
+                    '''
                 }
             }
         }
 
-        stage('Push Docker Image') {
+        stage('Push para o Docker Hub') {
             steps {
-                withCredentials([usernamePassword(
-                    credentialsId: 'docker-login', 
-                    usernameVariable: 'DOCKER_USERNAME', 
-                    passwordVariable: 'DOCKER_PASSWORD'
-                )]) {
+                withCredentials([usernamePassword(credentialsId: DOCKER_CREDENTIALS, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                     script {
-                        sh "echo ${DOCKER_PASSWORD} | docker login -u ${DOCKER_USERNAME} --password-stdin"
-                        sh "docker push ${DOCKER_REGISTRY}/${IMAGE_NAME}:latest"
+                        sh '''
+                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                        docker push $DOCKER_IMAGE:latest
+                        '''
                     }
                 }
             }
         }
 
-        stage('Deploy with Helm') {
+        stage('Deploy no Kubernetes com Helm') {
             steps {
-                withKubeConfig([credentialsId: 'kubeconfig-minikube', kubeconfigId: 'minikube-config']) {
+                withCredentials([file(credentialsId: KUBE_CONFIG, variable: 'KUBECONFIG')]) {
                     script {
-                        sh """
-                        helm upgrade --install my-app ./helm-chart/ \
-                            --set image.repository=${DOCKER_REGISTRY}/${IMAGE_NAME} \
-                            --set image.tag=latest
-                        """
+                        sh '''
+                        helm upgrade --install my-app ./my-calculator-chart \
+                            --set image.repository=$DOCKER_IMAGE \
+                            --set image.tag=latest \
+                            --namespace $K8S_NAMESPACE
+                        '''
                     }
                 }
             }
-        }
-    }
-
-    post {
-        always {
-            echo 'Pipeline completed!'
-        }
-        success {
-            echo 'Deployment successful!'
-        }
-        failure {
-            echo 'Pipeline failed. Please check the logs.'
         }
     }
 }
-
