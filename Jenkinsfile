@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         DOCKER_CREDENTIALS = 'docker-login' // ID das credenciais Docker
-        GIT_CREDENTIALS = 'git-credentials' // ID das credenciais GitHub
+        GIT_CREDENTIALS = 'github-credentials' // ID das credenciais GitHub
         KUBE_CONFIG = 'kubeconfig-minikube' // ID das credenciais Kubernetes
         DOCKER_IMAGE = 'genciano/my-calculator-pipe'
         K8S_NAMESPACE = 'default' // Substitua se necessário
