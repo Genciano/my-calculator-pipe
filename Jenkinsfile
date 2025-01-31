@@ -2,9 +2,9 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_CREDENTIALS = 'docker-login' // ID das credenciais Docker
+        DOCKER_CREDENTIALS = 'dockerhub-credential' // ID das credenciais Docker
         GIT_CREDENTIALS = 'github-credential' // ID das credenciais GitHub
-        KUBE_CONFIG = 'kubeconfig-minikube' // ID das credenciais Kubernetes
+        KUBE_CONFIG = 'minikube-credential' // ID das credenciais Kubernetes
         DOCKER_IMAGE = 'genciano/my-calculator-pipe'
         K8S_NAMESPACE = 'default' // Substitua se necessário
     }
